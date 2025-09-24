@@ -1,0 +1,27 @@
+# PlatformIO
+.pio/
+*.elf
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Python virtual environments
+.venv/
+env/
+venv/
+
+# Logs
+*.log
+
+# Compiled source
+*.o
+*.obj
+*.exe
+
+# Backup files
+*~
