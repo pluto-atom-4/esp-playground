@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Arduino_GFX_Library.h>
-#include "NotoSansMonoSCB16pt7b.h" 
+#include "myJapaneseFont.h"
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -16,11 +16,11 @@ void setup() {
   gfx->begin();
   gfx->fillScreen(BLACK);
   gfx->setTextColor(WHITE);
-  gfx->setFont(&NotoSansMonoSCB16pt7b); // Set Japanese font
 
   // Example Japanese string in UTF-8
+  gfx->setFont(&myJapaneseFont16pt7b);
   gfx->setCursor(0, 24);
-  gfx->println("こんにちは世界"); // "Hello, World" in Japanese
+  gfx->println("こんにちは"); // "Hello" in Japanese
 
   // If your font doesn't support all glyphs, you may see '?' marks.
 }
