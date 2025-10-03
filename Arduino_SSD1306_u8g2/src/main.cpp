@@ -33,6 +33,8 @@ uint32_t lcg_rnd(void) {
 
 void setup(void) {
   u8g2.begin();
+  u8g2.enableUTF8Print();
+  u8g2.setFont(u8g2_font_unifont_t_japanese1);
 }
 
 void draw(int is_blank)
@@ -194,7 +196,30 @@ void draw_m0_h_with_extra_blank()
   u8g2.setFontMode(0);
   u8g2.setFont(u8g2_font_cu12_hr);		
   u8g2.clearBuffer();					// clear the internal memory once
-  draw(1);
+  draw(0);
+}
+
+void draw_japanese()
+{
+  u8g2.clearBuffer();
+  
+  u8g2.setFontMode(1);
+  u8g2.setFont(u8g2_font_unifont_t_japanese1);		
+  
+  u8g2.setCursor(0,15);
+  u8g2.print(F("日本語表示"));
+  u8g2.setCursor(0,30);
+  u8g2.print(F("できました"));
+  u8g2.setCursor(0, 55);
+  u8g2.print(F("Good!"));
+  
+  u8g2.sendBuffer();
+  delay(INFO_SCREEN_DELAY);
+  
+  u8g2.setFontMode(0);
+  u8g2.setFont(u8g2_font_unifont_t_japanese1);		
+  u8g2.clearBuffer();					// clear the internal memory once
+  draw(0);
 }
 
 
@@ -219,6 +244,7 @@ void loop(void) {
   draw_m0_t();			// fontmode 0, t font --> wrong
   draw_m0_h();			// fontmode 1, h font --> ok
   draw_m0_h_with_extra_blank();	// fontmode 1, h font with extra blank --> correct
+  draw_japanese();		// fontmode 0, japanese font --> ok
   delay(1000);  
 }
 
