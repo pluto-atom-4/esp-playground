@@ -1,30 +1,37 @@
 #include <Arduino.h>
-#include <Arduino_GFX_Library.h>
-#include "myJapaneseFont.h"
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Fonts/FreeSerifBoldItalic18pt7b.h>  // Example custom font
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
-#define I2C_SDA 4
-#define I2C_SCL 5
 
-// Use I2C SSD1306
-Arduino_DataBus *bus = new Arduino_ESP32I2C(I2C_SDA, I2C_SCL);
-Arduino_GFX *gfx = new Arduino_SSD1306_128X64_I2C(bus, -1, 0x3C);
+// I2C address for most SSD1306 OLEDs is 0x3C
+#define OLED_RESET    -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 void setup() {
   Serial.begin(115200);
-  gfx->begin();
-  gfx->fillScreen(BLACK);
-  gfx->setTextColor(WHITE);
 
-  // Example Japanese string in UTF-8
-  gfx->setFont(&myJapaneseFont16pt7b);
-  gfx->setCursor(0, 24);
-  gfx->println("こんにちは"); // "Hello" in Japanese
+  // Wire begin with correct pins for XIAO ESP32C3
+  Wire.begin(6, 7); // SDA = 6, SCL = 7
 
-  // If your font doesn't support all glyphs, you may see '?' marks.
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println("SSD1306 allocation failed");
+    while (1);
+  }
+
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+
+  // Use custom font
+  display.setFont(&FreeSerifBoldItalic18pt7b);
+  display.setCursor(0, 40); // y is baseline
+  display.println("Hello!");
+  display.display();
 }
 
 void loop() {
-  // Nothing to do here
+  // nothing here
 }
