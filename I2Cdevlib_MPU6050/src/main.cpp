@@ -81,6 +81,15 @@ and so on.
 #include "I2Cdev.h"
 #include "MPU6050.h"
 
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// OLED display settings
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET    -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
@@ -127,6 +136,22 @@ void SetAveraging(int NewN);
 void ForceHeader()
   { LinesOut = 99; }
     
+// Helper to display Smoothed values on OLED
+void DisplaySmoothedOnOLED() {
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.setTextSize(1);
+    display.print("Accel: ");
+    display.print(Smoothed[iAx]); display.print(", ");
+    display.print(Smoothed[iAy]); display.print(", ");
+    display.println(Smoothed[iAz]);
+    display.print("Gyro:  ");
+    display.print(Smoothed[iGx]); display.print(", ");
+    display.print(Smoothed[iGy]); display.print(", ");
+    display.println(Smoothed[iGz]);
+    display.display();
+}
+
 void GetSmoothed()
   { int16_t RawValue[6];
     int i;
@@ -151,6 +176,7 @@ void GetSmoothed()
 //    Serial.println(" Hz");
     for (i = iAx; i <= iGz; i++)
       { Smoothed[i] = (Sums[i] + N/2) / N ; }
+    DisplaySmoothedOnOLED();
   } // GetSmoothed
 
 void Initialize()
@@ -172,6 +198,20 @@ void Initialize()
     Serial.println("Testing device connections...");
     Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
     Serial.println("PID tuning Each Dot = 100 readings");
+
+    // Initialize OLED display
+    if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // 0x3C is the default I2C address for most 128x64 OLEDs
+        Serial.println(F("SSD1306 allocation failed"));
+        for(;;); // Don't proceed, loop forever
+    }
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0,0);
+    display.println("MPU6050 Offset Finder");
+    display.display();
+    delay(1000);
+
   /*A tidbit on how PID (PI actually) tuning works. 
     When we change the offset in the MPU6050 we can get instant results. This allows us to use Proportional and 
     integral of the PID to discover the ideal offsets. Integral is the key to discovering these offsets, Integral 
