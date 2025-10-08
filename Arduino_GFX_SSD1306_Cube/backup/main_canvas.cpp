@@ -1,17 +1,20 @@
 #include <Arduino.h>
+#undef LITTLE_FOOT_PRINT  // Ensure Canvas classes are available
+#include <Arduino_GFX_Library.h>
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 
 // OLED display settings
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
-#define OLED_RESET -1 // Not used for I2C
+#define OLED_RESET -1 // Not used
 #define I2C_SDA 6 // GPIO pin for SDA
 #define I2C_SCL 7 // GPIO pin for SCL
 
-// Create display object
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+// Use the I2C bus for the SSD1306  
+// Try 0x3D if 0x3C doesn't work
+Arduino_DataBus *bus = new Arduino_Wire(0x3C, 0x00, 0x40);
+Arduino_SSD1306 *display = new Arduino_SSD1306(bus, OLED_RESET, SCREEN_WIDTH, SCREEN_HEIGHT);
+Arduino_Canvas_Mono *gfx = new Arduino_Canvas_Mono(SCREEN_WIDTH, SCREEN_HEIGHT, display);
 
 struct Vec3 {
   float x, y, z;
@@ -60,40 +63,22 @@ void project(Vec3 v, int &x, int &y) {
 
 void setup() {
   Serial.begin(115200);
-  delay(2000);
-  Serial.println("Starting Adafruit SSD1306 Cube Demo...");
+  Serial.println("Starting SSD1306 Cube Demo...");
   
   // Initialize I2C with custom pins
   Wire.begin(I2C_SDA, I2C_SCL);
-  Wire.setClock(400000);
-  Serial.println("I2C initialized");
+  Wire.setClock(400000); // Set I2C frequency to 400kHz
   
-  // Initialize display with I2C address 0x3C
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
-    Serial.println(F("SSD1306 allocation failed"));
+  Serial.println("Initializing display...");
+  if (!display->begin()) {
+    Serial.println("SSD1306 allocation failed");
     for(;;); // Don't proceed, loop forever
   }
-  Serial.println("Display initialized successfully!");
   
-  // Test display with full screen flash
-  Serial.println("Testing display...");
-  display.clearDisplay();
-  display.fillScreen(SSD1306_WHITE);
-  display.display();
-  delay(1000);
-  
-  display.clearDisplay();
-  display.display();
-  delay(500);
-  
-  // Show startup message
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0,0);
-  display.println("Cube Demo");
-  display.println("Starting...");
-  display.display();
-  delay(2000);
+  Serial.println("Display initialized, setting up canvas...");
+  gfx->begin();
+  gfx->fillScreen(BLACK);
+  gfx->flush();
   
   Serial.println("Setup complete!");
 }
@@ -111,8 +96,8 @@ void loop() {
     project(rv, px[i], py[i]);
   }
 
-  // Clear the display
-  display.clearDisplay();
+  // Clear the canvas
+  gfx->fillScreen(BLACK);
   
   // Draw cube edges
   for (int i = 0; i < 12; i++) {
@@ -124,28 +109,23 @@ void loop() {
     // Ensure coordinates are within screen bounds
     if (x1 >= 0 && x1 < SCREEN_WIDTH && y1 >= 0 && y1 < SCREEN_HEIGHT &&
         x2 >= 0 && x2 < SCREEN_WIDTH && y2 >= 0 && y2 < SCREEN_HEIGHT) {
-      display.drawLine(x1, y1, x2, y2, SSD1306_WHITE);
+      gfx->drawLine(x1, y1, x2, y2, WHITE);
     }
   }
   
-  // Also draw vertices as dots
+  // Also draw vertices as dots for debugging
   for (int i = 0; i < 8; i++) {
     if (px[i] >= 0 && px[i] < SCREEN_WIDTH && py[i] >= 0 && py[i] < SCREEN_HEIGHT) {
-      // Draw a small cross for each vertex
-      display.drawPixel(px[i], py[i], SSD1306_WHITE);
-      if (px[i] > 0) display.drawPixel(px[i]-1, py[i], SSD1306_WHITE);
-      if (px[i] < SCREEN_WIDTH-1) display.drawPixel(px[i]+1, py[i], SSD1306_WHITE);
-      if (py[i] > 0) display.drawPixel(px[i], py[i]-1, SSD1306_WHITE);
-      if (py[i] < SCREEN_HEIGHT-1) display.drawPixel(px[i], py[i]+1, SSD1306_WHITE);
+      gfx->fillCircle(px[i], py[i], 1, WHITE);
     }
   }
 
   // Update the display
-  display.display();
-
+  gfx->flush();
+  
   // Debug output every 2 seconds
   if (millis() - lastDebug > 2000) {
-    Serial.print("Cube vertices: ");
+    Serial.print("Vertices: ");
     for (int i = 0; i < 8; i++) {
       Serial.print("(");
       Serial.print(px[i]);
@@ -157,5 +137,5 @@ void loop() {
     lastDebug = millis();
   }
   
-  delay(50);
+  delay(50); // Reduced delay for smoother animation
 }
